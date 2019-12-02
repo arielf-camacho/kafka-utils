@@ -1,5 +1,5 @@
 organization in ThisBuild := "com.github.arielf-camacho"
-version in ThisBuild := "1.0.0"
+version in ThisBuild := "1.0.2"
 scalaVersion in ThisBuild := "2.12.7"
 
 val scalaOptions = Seq(
@@ -71,6 +71,23 @@ lazy val `kafka-utils` = (project in file("."))
 
 useGpg := true
 credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credential")
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/arielf-camacho/kafka-utils"),
+    "scm:git@github.com:arielf-camacho/kafka-utils.git"
+  )
+)
+ThisBuild / developers := List(
+  Developer(
+    id = "arielf-camacho",
+    name = "Your Name",
+    email = "arielf.camacho@gmail.com",
+    url = url("https://www.linkedin.com/in/ariel-felipe-camacho-d%C3%ADaz-ba3b21a2/")
+  )
+)
+ThisBuild / description := "Custom utilities that simplify the use of Apacha Kafka."
+ThisBuild / licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+ThisBuild / homepage := Some(url("https://github.com/arielf-camacho/kafka-utils"))
 ThisBuild / pomIncludeRepository := { _ =>
   false
 }
