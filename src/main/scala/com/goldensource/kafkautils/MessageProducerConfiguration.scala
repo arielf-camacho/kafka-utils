@@ -25,7 +25,9 @@ object MessageProducerConfiguration extends BrokerClient {
     *         the provided client identifier and also the other parameters extracted from the given configuration.
     */
   def apply(configuration: Config = ConfigFactory.load): MessageProducerConfiguration =
-    new MessageProducerConfiguration(bootstrapServers = configuration.getString(getSetting("bootstrap-servers")))
+    new MessageProducerConfiguration(
+      bootstrapServers = safeGet(_.getString(getSetting("bootstrap-servers")), "localhost:9092")(configuration)
+    )
 
   override protected val CLIENT_SECTION: Option[String] = Some("producer")
 }
