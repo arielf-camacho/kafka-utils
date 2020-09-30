@@ -23,8 +23,10 @@ val scalaOptions = Seq(
 scalacOptions ++= scalaOptions
 
 val akkaVersion            = "2.5.22"
-val akkaStreamKafkaVersion = "1.0.4"
+val akkaStreamKafkaVersion = "2.0.5"
 val itDirectory            = "/src/integration-tests/scala"
+val itAndTest              = "it,test"
+val testContainer          = "1.12.0"
 
 // Common options
 val commonSettings = Seq(
@@ -55,15 +57,16 @@ lazy val `kafka-utils` = (project in file("."))
   .settings(
     Defaults.itSettings,
     libraryDependencies ++= Seq(
-      "com.dimafeng"      %% "testcontainers-scala"      % "0.31.0" withSources,
-      "com.typesafe"      % "config"                     % "1.3.2" withSources,
-      "com.typesafe.akka" %% "akka-actor"                % akkaVersion withSources, // scalastyle:ignore
-      "com.typesafe.akka" %% "akka-stream"               % akkaVersion withSources,
-      "com.typesafe.akka" %% "akka-stream-kafka"         % akkaStreamKafkaVersion withSources,
-      "com.typesafe.akka" %% "akka-stream-kafka-testkit" % akkaStreamKafkaVersion withSources,
-      "com.typesafe.akka" %% "akka-testkit"              % akkaVersion % "it,test" withSources,
-      "org.mockito"       % "mockito-core"               % "3.0.0" withSources,
-      "org.scalatest"     %% "scalatest"                 % "3.0.5" withSources
+      "com.dimafeng"       %% "testcontainers-scala"      % "0.38.4" % itAndTest,
+      "com.typesafe"       % "config"                     % "1.3.2",
+      "com.typesafe.akka"  %% "akka-actor"                % akkaVersion, // scalastyle:ignore
+      "com.typesafe.akka"  %% "akka-stream"               % akkaVersion,
+      "com.typesafe.akka"  %% "akka-stream-kafka"         % akkaStreamKafkaVersion,
+      "com.typesafe.akka"  %% "akka-stream-kafka-testkit" % akkaStreamKafkaVersion,
+      "com.typesafe.akka"  %% "akka-testkit"              % akkaVersion % itAndTest,
+      "org.mockito"        % "mockito-core"               % "3.0.0" % itAndTest,
+      "org.scalatest"      %% "scalatest"                 % "3.0.5" % itAndTest,
+      "org.testcontainers" % "kafka"                      % testContainer % itAndTest
     ),
     scalacOptions ++= scalaOptions,
     scalaSource in IntegrationTest := baseDirectory.value / itDirectory
