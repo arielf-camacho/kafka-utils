@@ -27,7 +27,7 @@ class MessageProducerConfigurationTests extends FlatSpec with Matchers with Befo
     val subject = MessageProducerConfiguration()
 
     // then
-    subject.bootstrapServers shouldBe "localhost:9092"
+    subject.bootstrapServers shouldBe "localhost:9092" // scalastyle:ignore
   }
 
   it should "load default values for empty application configuration files" in {

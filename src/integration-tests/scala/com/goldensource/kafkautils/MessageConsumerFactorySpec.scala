@@ -28,20 +28,24 @@ class MessageConsumerFactorySpec
   private var topics: Set[String]   = _
   private val groupId: String       = "message-consumers"
   private val configuration: Config = ConfigFactory.defaultApplication().resolve()
-  private val testActorSystem       = ActorSystem("TestMessageConsumerFactoryTests", configuration)
-  private val testMaterializer      = ActorMaterializer()(testActorSystem)
+
+  // noinspection TypeAnnotation
+  implicit private val testActorSystem = ActorSystem("TestMessageConsumerFactoryTests", configuration)
+  // noinspection TypeAnnotation
+  implicit private val testMaterializer = ActorMaterializer()(testActorSystem)
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = scaled(Span(30, Seconds)),
     interval = Span(2, Seconds)
   )
+  implicit private def preProcess(commitableMessage: StreamMessage): TestMessage =
+    TestMessage(message = new String(commitableMessage.record.value))
+  implicit private def convertToBytes(message: TestMessage): Array[Byte] = message.message.getBytes
+
   private var messageConsumerConfiguration: MessageConsumerConfiguration = _
   private var messageProducerConfiguration: MessageProducerConfiguration = _
-  private def newProducer: MessageProducer =
-    new MessageProducer(messageProducerConfiguration)
-  private def newMessage: TestMessage = TestMessage(message = Random.alphanumeric.take(20).mkString)
 
-  private def convertToTestMessage(bytes: Array[Byte]): TestMessage      = TestMessage(message = new String(bytes))
-  implicit private def convertToBytes(message: TestMessage): Array[Byte] = message.message.getBytes
+  private def newProducer: MessageProducer = new MessageProducer(messageProducerConfiguration)
+  private def newMessage: TestMessage      = TestMessage(message = Random.alphanumeric.take(20).mkString)
 
   import testActorSystem.dispatcher
 
@@ -87,10 +91,7 @@ class MessageConsumerFactorySpec
           }
 
         // and there is instantiated the consumer
-        val control =
-          MessageConsumerFactory.createConsumerFor(messageConsumerConfiguration, handle)(testActorSystem,
-                                                                                         testMaterializer,
-                                                                                         convertToTestMessage)
+        val control = MessageConsumerFactory.createConsumerFor(messageConsumerConfiguration, handle)
 
         eventually {
           consumedMessages must contain allElementsOf messages

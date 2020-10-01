@@ -100,3 +100,6 @@ ThisBuild / publishTo := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 ThisBuild / publishMavenStyle := true
+
+testAll := (test in IntegrationTest).dependsOn(test in Test).value
+lazy val testAll = TaskKey[Unit]("testAll")

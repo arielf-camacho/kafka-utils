@@ -1,10 +1,16 @@
 package com.goldensource
 
+import akka.kafka.ConsumerMessage.CommittableMessage
 import com.typesafe.config.Config
 
 import scala.util.{Failure, Success, Try}
 
 package object kafkautils {
+
+  /**
+    * Aliases the type of object received when pre-processing a message from a Kafka topic.
+    */
+  type StreamMessage = CommittableMessage[String, Array[Byte]]
 
   /**
     * Allows to safely obtain a setting from a configuration file and put a default value if for some reason a failure
