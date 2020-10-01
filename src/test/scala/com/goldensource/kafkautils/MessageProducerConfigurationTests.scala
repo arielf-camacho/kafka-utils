@@ -1,5 +1,7 @@
 package com.goldensource.kafkautils
 
+import java.io.File
+
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
@@ -23,6 +25,17 @@ class MessageProducerConfigurationTests extends FlatSpec with Matchers with Befo
     "application configuration" in {
     // when
     val subject = MessageProducerConfiguration()
+
+    // then
+    subject.bootstrapServers shouldBe "localhost:9092" // scalastyle:ignore
+  }
+
+  it should "load default values for empty application configuration files" in {
+    // given
+    val configuration = ConfigFactory.parseFile(new File("./src/test/resources/empty-application.conf"))
+
+    // when
+    val subject = MessageProducerConfiguration(configuration)
 
     // then
     subject.bootstrapServers shouldBe "localhost:9092"

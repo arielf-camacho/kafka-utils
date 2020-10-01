@@ -1,5 +1,6 @@
 package com.goldensource.kafkautils
 
+import java.io.File
 import java.time.temporal.ChronoUnit
 import java.time.{Duration => JDuration}
 
@@ -13,7 +14,7 @@ class MessageConsumerConfigurationTests extends FlatSpec with Matchers with Befo
   private val consumerSection = "message-broker.consumer"
   private val secondsName     = "seconds"
 
-  "apply method" should "return a properly initialized MessageSenderConfiguration instance when provided a " +
+  "apply method" should "return a properly initialized MessageConsumerConfiguration instance when provided a " +
     "specific configuration" in {
     // given
     val minBackoff           = ConfigValueFactory.fromAnyRef(s"${Random.nextInt(20)} $secondsName")
@@ -58,7 +59,7 @@ class MessageConsumerConfigurationTests extends FlatSpec with Matchers with Befo
     subject.bootstrapServers shouldBe bootstrapServers.unwrapped
   }
 
-  it should "return a properly initialized MessageSenderConfiguration instance when using the " +
+  it should "return a properly initialized MessageConsumerConfiguration instance when using the " +
     "application configuration" in {
     // given
     val topics  = (1 to Random.nextInt(5)).map(_ => Random.nextString(20)).toSet
@@ -68,7 +69,7 @@ class MessageConsumerConfigurationTests extends FlatSpec with Matchers with Befo
     val subject = MessageConsumerConfiguration(topics, groupId)
 
     // then
-    subject.bootstrapServers shouldBe "localhost:9092"
+    subject.bootstrapServers shouldBe "localhost:9092" // scalastyle:ignore
     subject.minBackoff shouldBe (1 second)
     subject.maxBackoff shouldBe (2 seconds)
     subject.pollInterval shouldBe JDuration.of(250, ChronoUnit.MILLIS)
@@ -81,5 +82,31 @@ class MessageConsumerConfigurationTests extends FlatSpec with Matchers with Befo
     subject.topics shouldBe topics
   }
 
+  it should "load default values for empty application configuration files" in {
+    // given
+    val configuration = ConfigFactory.parseFile(new File("./src/test/resources/empty-application.conf"))
+    val topics        = (1 to Random.nextInt(5)).map(_ => Random.nextString(20)).toSet
+    val groupId       = Random.nextString(10)
+
+    // when
+    val subject = MessageConsumerConfiguration(topics, groupId)(configuration)
+
+    // then
+    subject.minBackoff should be(1 second)
+    subject.maxBackoff should be(8 seconds)
+    subject.pollInterval should be(toJDuration(250 milliseconds))
+    subject.pollTimeout should be(toJDuration(300 milliseconds))
+    subject.parallelism should be(5)
+    subject.messageCommitTimeout should be(toJDuration(1 second))
+    subject.sessionTimeout should be(10000)
+    subject.commitBatchSize shouldBe 1
+    subject.topics shouldBe topics
+    subject.groupId shouldBe groupId
+    subject.dispatcher shouldBe "akka.actor.default-dispatcher"
+    subject.bootstrapServers shouldBe "localhost:9092"
+  }
+
   private def toJDuration(string: String) = JDuration.of(Duration(string).toSeconds, ChronoUnit.SECONDS)
+
+  private def toJDuration(duration: FiniteDuration) = java.time.Duration.ofNanos(duration.toNanos)
 }

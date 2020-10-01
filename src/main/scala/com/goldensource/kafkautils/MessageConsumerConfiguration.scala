@@ -39,7 +39,7 @@ class MessageConsumerConfiguration(
     val sessionTimeout: Int = 3000,
     val parallelism: Int = 1,
     val commitBatchSize: Long = 1,
-    val dispatcher: String = "akka.actor.default-dispatcher",
+    val dispatcher: String = "akka.actor.default-dispatcher", // scalastyle:ignore
     val configuration: Config)
 
 /**
@@ -63,32 +63,30 @@ object MessageConsumerConfiguration extends BrokerClient {
   def apply(
       topics: Set[String],
       groupId: String
-    )(implicit configuration: Config = ConfigFactory.load
+    )(implicit configuration: Config = ConfigFactory.load.resolve
     ): MessageConsumerConfiguration =
     new MessageConsumerConfiguration(
-      minBackoff = configuration.getDuration(getSetting("min-backoff")),
-      maxBackoff = configuration.getDuration(getSetting("max-backoff")),
       topics = topics,
-      bootstrapServers = configuration.getString(getSetting("bootstrap-servers")),
       groupId = groupId,
-      pollInterval = configuration.getDuration(getSetting("poll-interval")),
-      pollTimeout = configuration.getDuration(getSetting("poll-timeout")),
-      messageCommitTimeout = configuration.getDuration(getSetting("message-commit-timeout")),
-      sessionTimeout = configuration
-        .getDuration(getSetting("session-timeout-ms"))
-        .toMillis
-        .toInt,
-      parallelism = configuration.getInt(getSetting("parallelism")),
-      commitBatchSize = configuration.getLong(getSetting("commit-batch-size")),
-      dispatcher = configuration.getString(getSetting("dispatcher")),
+      minBackoff = safeGet(_.getDuration(getSetting("min-backoff")), 1 second),
+      maxBackoff = safeGet(_.getDuration(getSetting("max-backoff")), 8 seconds),
+      bootstrapServers = safeGet(_.getString(getSetting("bootstrap-servers")), "localhost:9092"),
+      pollInterval = safeGet(_.getDuration(getSetting("poll-interval")), 250 milliseconds),
+      pollTimeout = safeGet(_.getDuration(getSetting("poll-timeout")), 300 milliseconds),
+      messageCommitTimeout = safeGet(_.getDuration(getSetting("message-commit-timeout")), 1 second),
+      sessionTimeout =
+        safeGet(_.getDuration(getSetting("session-timeout-ms")), java.time.Duration.ofMillis(10000)).toMillis.toInt,
+      parallelism = safeGet(_.getInt(getSetting("parallelism")), 5),
+      commitBatchSize = safeGet(_.getLong(getSetting("commit-batch-size")), 1),
+      dispatcher = safeGet(_.getString(getSetting("dispatcher")), "akka.actor.default-dispatcher"),
       configuration = configuration
     )
 
   override protected val CLIENT_SECTION: Option[String] = Some("consumer")
 
   implicit def convertToFiniteDuration(duration: java.time.Duration): FiniteDuration =
-    FiniteDuration(
-      duration.toMillis,
-      TimeUnit.MILLISECONDS
-    )
+    FiniteDuration(duration.toMillis, TimeUnit.MILLISECONDS)
+
+  implicit def convertToDuration(duration: FiniteDuration): java.time.Duration =
+    java.time.Duration.ofNanos(duration.toNanos)
 }

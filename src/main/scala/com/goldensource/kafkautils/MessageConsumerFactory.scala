@@ -33,7 +33,10 @@ trait MessageConsumerFactory {
     * @param system An [[akka.actor.ActorSystem]] to host the actors created to support the stream.
     * @param materializer An [[akka.stream.Materializer]] which will materialize the stream when its ready to be
     *                     started.
-    * @param convertToType A function that transforms a byte array corresponding to a message to expected message type.
+    * @param preProcessMessage A function opens the possibility to make initial transformations to the received message.
+    *                          It's a place to put aspects that must be taken care of before the actual message
+    *                          processing by the application. But above all, it must convert from a
+    *                          [[StreamMessage]] to an instance of the actual expected message type [[T]].
     * @tparam T The type that is expected the messages to have.
     * @return A [[java.util.concurrent.atomic.AtomicReference]] containing a [[akka.kafka.scaladsl.Consumer.Control]]
     *         that can be used to control when the consumption stream should be stopped.
@@ -43,7 +46,7 @@ trait MessageConsumerFactory {
       consumeMessage: ConsumeMessage[T]
     )(implicit system: ActorSystem,
       materializer: Materializer,
-      convertToType: Array[Byte] => T
+      preProcessMessage: StreamMessage => T
     ): AtomicReference[Control]
 }
 
@@ -64,7 +67,7 @@ object MessageConsumerFactory extends MessageConsumerFactory {
       consumeMessage: ConsumeMessage[T]
     )(implicit system: ActorSystem,
       materializer: Materializer,
-      convertToType: Array[Byte] => T
+      preProcessMessage: StreamMessage => T
     ): AtomicReference[Control] = {
     val committerSettings = CommitterSettings(system).withMaxBatch(configuration.commitBatchSize)
     val subscription      = Subscriptions.topics(configuration.topics)
@@ -101,7 +104,7 @@ object MessageConsumerFactory extends MessageConsumerFactory {
       configuration: MessageConsumerConfiguration,
       consumeMessage: T => Future[Done]
     )(implicit system: ActorSystem,
-      convertToType: Array[Byte] => T
+      preprocessMessage: StreamMessage => T
     ): Source[Done, Unit] = {
     val dispatcher       = system.dispatchers.lookup(configuration.dispatcher)
     val consumerSettings = createConsumerSettings(configuration, system)
@@ -110,8 +113,8 @@ object MessageConsumerFactory extends MessageConsumerFactory {
       .committableSource(consumerSettings, subscription)
       .mapMaterializedValue(control.set)
       .mapAsync(configuration.parallelism) { message =>
-        val convertedMessage = convertToType(message.record.value)
-        consumeMessage(convertedMessage).map(_ => message.committableOffset)(dispatcher)
+        val preProcessedMessage = preprocessMessage(message)
+        consumeMessage(preProcessedMessage).map(_ => message.committableOffset)(dispatcher)
       }
       .via(Committer.flow(committerSettings.withMaxBatch(1)))
   }
