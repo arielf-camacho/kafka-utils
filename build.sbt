@@ -1,5 +1,5 @@
 organization in ThisBuild := "com.github.arielf-camacho"
-version in ThisBuild := "1.0.2"
+version in ThisBuild := "1.0.3"
 scalaVersion in ThisBuild := "2.12.7"
 
 val scalaOptions = Seq(
@@ -72,7 +72,6 @@ lazy val `kafka-utils` = (project in file("."))
     scalaSource in IntegrationTest := baseDirectory.value / itDirectory
   )
 
-useGpg := true
 credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credential")
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -83,7 +82,7 @@ ThisBuild / scmInfo := Some(
 ThisBuild / developers := List(
   Developer(
     id = "arielf-camacho",
-    name = "Your Name",
+    name = "Ariel Felipe Camacho Diaz",
     email = "arielf.camacho@gmail.com",
     url = url("https://www.linkedin.com/in/ariel-felipe-camacho-d%C3%ADaz-ba3b21a2/")
   )
